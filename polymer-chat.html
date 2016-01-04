@@ -1,0 +1,434 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-badge/paper-badge.html">
+<link rel="import" href="../../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+<link rel="import" href="../../bower_components/paper-styles/default-theme.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-shared-element-animatable-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
+
+
+
+<script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
+<!--
+An element providing a solution to no problem in particular.
+
+Example:
+
+    <polymer-socket></polymer-socket>
+
+@group Seed Elements
+@element polymer-socket
+@demo demo/index.html
+@hero hero.svg
+-->
+<dom-module id="polymer-socket">
+
+  <template>
+    <style>
+     :host {
+        display: block;
+        font-family: Roboto, Noto;
+      }
+      ::shadow paper-badge {
+        --paper-badge-background: #014970;
+      }
+      ::shadow paper-fab {
+        --paper-fab-background: #014970;
+        --paper-fab-keyboard-focus-background: #014970;
+        --paper-fab-disabled-background: #014970;
+        position: absolute;
+        bottom: 0;
+        right: 0px;
+        margin: 35px;
+      }
+      ::shadow paper-input {
+        --paper-input-container-color: #014970;
+        --paper-input-container-focus-color: #014970;
+      }
+      ::shadow paper-card {
+        position: absolute;
+        bottom: 35px;
+        right: 100px;
+        --paper-card-header-color: white;
+        --paper-card-header: {
+          background:#014970;
+        };
+      }
+      ::shadow .card-content {
+        width: 300px;
+        height: 200px;
+        overflow: auto;
+      }
+      ::shadow .inputcontainer, .inputicon {
+
+      }
+      ::shadow .inputicon {
+        float:right;
+        margin-top:15px;
+      }
+      ::shadow .oculto {
+        display: none;
+      }
+      #myanimatable {
+        display:none;
+      }
+      ::shadow .inputcontainer {
+        float:left;
+        vertical-align: middle;
+        width:calc(100% - 40px);
+      }
+      paper-material {
+        background:#0286ce;
+        width:calc(100% - 30px);
+        float:left;
+        padding:10px 0px 25px 10px;
+        margin:2px;
+        color:white;
+        border-radius:2px;
+      }
+      .sender > .little{
+        bottom: 5px;
+        right: 0px !important;
+        color:black !important;
+      }
+      .card-content {
+        background:#F1F1F1;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #d6d6d6;
+      }
+      .little {
+        position: absolute;
+        bottom: 5px;
+        left: 10px;
+        font-size: x-small;
+      }
+      ::shadow .sender {
+        background:white !important;
+        float:right;
+        color:black !important;
+      }
+      .systemmessage {
+        background: #ccc !important;
+        text-align: center;
+        padding: 5px;
+        color: black;
+      }
+    </style>
+    <div>
+      <paper-fab on-tap="toggleview" id="newMessage" icon="communication:message"></paper-fab>
+      <!--<paper-badge label="3" for="newMessage"></paper-badge>-->
+      <paper-tooltip for="newMessage"  position="top"> Nuevo mensaje </paper-tooltip>
+    </div>
+    <paper-card heading="[[receiver]]" id="myanimatable">
+      <div class="card-content">
+        <template is="dom-repeat" items="{{content}}">
+          <template is="dom-if" if="{{item.sender}}">
+            <paper-material elevation="0" animated class="sender">
+              <p>
+                <span>{{item.message}}</span>
+                <span class="little">{{item.date}}</span>
+              </p>
+            </paper-material>
+          </template>
+          <template is="dom-if" if="{{!item.sender}}">
+            <template is="dom-if" if="{{item.system}}">
+              <paper-material elevation="0" animated class="systemmessage">
+                {{item.message}}
+              </paper-material>
+            </template>
+            <template is="dom-if" if="{{!item.system}}">
+              <paper-material elevation="0" animated>
+                <p>
+                  <span>{{item.message}}</span>
+                  <br>
+                  <span class="little">{{item.date}}</span>
+                </p>
+              </paper-material>
+            </template>
+          </template>
+        </template>
+      </div>
+      <div class="card-actions">
+        <paper-input label="Mensaje para {{receiver}}" class="inputcontainer" icon="clear">
+        </paper-input>
+        <paper-icon-button icon="send" class="inputicon" on-tap="sendmessage"></paper-icon-button>
+      </div>
+    </paper-card>
+  </template>
+
+</dom-module>
+
+<script>
+  var socket;
+  Polymer({
+
+    is: 'polymer-socket',
+    behaviors: [
+      Polymer.NeonAnimationRunnerBehavior,
+      Polymer.NeonAnimatableBehavior
+    ],
+    properties: {
+      animationConfig: {
+        value: function() {
+          return {
+            // run fade-in-animation on this, and the entry animation on this.$.myAnimatable
+            'entry': [
+              {name: 'scale-up-animation', node: this.$.myanimatable}
+            ],
+            'exit': [
+              {name: 'scale-down-animation', node: this.$.myanimatable}
+            ]
+          }
+        }
+      },
+      token: {
+        type: Object,
+        notify: true
+      },
+      content: {
+        type: Object,
+        notify: true
+      },
+      hidechat: {
+        type: Boolean,
+        value: false,
+        notify: true
+      },
+      emiters: {
+        type: Object,
+        notify: true
+      },
+      url: {
+        type: String,
+        value: "URL no definida",
+        notify: true
+      },
+      receiver: {
+        type: String,
+        value: "empty",
+        notify: true
+      }
+    },
+    listeners: {
+      'neon-animation-finish': '_onNeonAnimationFinish'
+    },
+    sendmessage: function () {
+      var message = {
+        nombre: "Enrique López",
+        message: this.querySelector('paper-input').value,
+        date: new Date().toDateString(),
+        view: false,
+        sender: true,
+        room: this.token
+      },
+      that = this;
+      socket.emit('user:sendmessage', message);
+      this.querySelector('paper-input').value = "";
+    },
+    show: function() {
+      this.hidechat = true;
+      this.$.myanimatable.style.display = 'inline';
+      this.$.myanimatable.style.zIndex = '2';
+      // run scale-up-animation
+      this.playAnimation('entry');
+    },
+     _onNeonAnimationFinish: function() {
+      if (!this.hidechat) {
+        this.$.myanimatable.style.display = 'none';
+      }
+    },
+    hide: function() {
+      this.hidechat = false;
+      // run fade-out-animation
+      this.playAnimation('exit');
+    },
+    // Element Lifecycle
+    toggleview: function (e) {
+      this.reflow();
+      //this.reflow();
+    },
+    newSocket: function (connection) {
+      socket = io.connect();
+      return socket;
+    },
+    reflow: function () {
+      var that = this.token;
+      if (this.token.length > 0) {
+        if (socket !== undefined) {
+        } else {
+          this.newSocket();
+          socket.on('user:sendmessage', function(data) {
+            console.log(data);
+          });
+          socket.on('user:a', function (data) {
+            console.log(data);
+          });
+          socket.emit('subscribe', {
+            room: that.token
+          });
+        }
+      }
+      if (this.hidechat) {
+        this.hide();
+      } else {
+        this.show();
+        //this.querySelector('paper-card').classList.add('oculto');
+      }
+    },
+    getSocket: function (connection) {
+      return socket;
+    },
+    ready: function() {
+      this.content = [
+        {
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: true
+        },{
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: false
+        },
+        {
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: true
+        },{
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: false
+        },
+        {
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: true
+        },
+        {
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: true
+        },{
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: false
+        },
+        {
+          nombre: "Alejandro Moreno",
+          message: "Que onda como vas",
+          date: "10-12-2015",
+          view: true,
+          sender: false
+        }
+      ];
+      var that = this;
+    },
+    waitfor: function (funcCondicion, callback) {
+      var interval = setInterval(function () {
+        if (funcCondicion()) {
+          clearInterval(interval);
+          callback();
+        }
+      }, 1);
+    },
+
+    attached: function() {
+      // `attached` fires once the element and its parents have been inserted
+      // into a document.
+      //
+      // This is a good place to perform any work related to your element's
+      // visual state or active behavior (measuring sizes, beginning animations,
+      // loading resources, etc).
+      var that = this;
+      if (this.url) {
+        if (this.url === "local") {
+          this.newSocket("local");
+        }
+      }
+      socket.on('user:receivermessage', function(message) {
+        that.push('content', message);
+        that.receiver = socket.id;
+      });
+
+      document.querySelector(".card-content").scrollTop += 100000000;
+
+    },
+
+    detached: function() {
+      // The analog to `attached`, `detached` fires when the element has been
+      // removed from a document.
+      //
+      // Use this to clean up anything you did in `attached`.
+    },
+
+    // Element Behavior
+
+    /**
+     * The `polymer-socket-lasers` event is fired whenever `fireLasers` is called.
+     *
+     * @event polymer-socket-lasers
+     * @detail {{sound: String}}
+     */
+
+    /**
+     * Sometimes it's just nice to say hi.
+     *
+     * @param {string} greeting A positive greeting.
+     * @return {string} The full greeting.
+     */
+    sayHello: function(greeting) {
+      var response = greeting || 'Hello World!';
+      return 'polymer-socket says, ' + response;
+    },
+
+    /**
+     * Attempt to destroy this element's enemies with a beam of light!
+     *
+     * Or, at least, dispatch an event in the vain hope that someone else will
+     * do the zapping.
+     */
+    fireLasers: function() {
+      this.fire('polymer-socket-lasers', {sound: 'Pew pew!'});
+    }
+
+  });
+
+</script>
